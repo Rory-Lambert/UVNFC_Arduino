@@ -1,0 +1,192 @@
+/*
+ *Edited from an open-source project. 
+ *Copyright 2013 Ten Wong, wangtengoo7@gmail.com  
+ *  https://github.com/awong1900/RF430CL330H_Shield 
+ *  RF430CL330H datasheet reference http://www.ti.com/
+ */
+
+/*********************************************************
+** sample: when reset the rf430, it will write the uri to 
+** rf430 tag.
+***********************************************************/
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+#include <Wire.h>
+#include <RF430CL330H_Shield.h>
+#include "rlmsg2.h"
+#define IRQ   (3)
+#define RESET (4)  
+int led = 13;  //_MH
+RF430CL330H_Shield nfc(IRQ, RESET);
+
+
+//Ten's variables
+volatile byte into_fired = 0;
+uint16_t flags = 0;
+
+
+//setup the byte arrays - should be GLOBAL!
+byte msg_setup[] = MSG_SETUP;  //31b
+byte mime_type[] = MIME_TYPE;  //27b
+byte aar[] = AAR; //33b
+byte payload[] = PAYLOAD;
+byte payload2[] = PAYLOAD2;
+byte header[11];
+
+
+unsigned static int PAY_LEN;
+
+/*********************************SETUP******************************/
+void setup(void) 
+{
+    
+    delay(10000);     //_MH addition
+  
+    //Serial.begin(115200);  ///tbr
+    //Serial.println("Serial connection initiated");    //tbr
+    //Serial.println("NDEF message creation");  //tbr
+    pinMode(led, OUTPUT);   //tbr
+    digitalWrite(led, HIGH);  //tbr
+    //reset RF430    //tbr
+    nfc.begin();
+    
+    //_MH change from delay(1000);
+    delay(10000);
+}
+
+
+/******************************SHOWARRAY******************************/
+/*
+void showarray (byte arr[], int length){
+  int x;
+  for (x=0; x<=length; x++){
+    Serial.print(arr[x],HEX);Serial.print(",");
+    //if x is divisible by ten print a new line
+    if ((x+1)%10==0){
+      Serial.println("");
+    }
+    delay(100);
+  }
+  Serial.println("\nEND\n");
+  delay(3000);
+} 
+
+void showASCII (byte arr[], int length){
+  int y;
+  char z;
+  for (y=0; y<=length; y++){
+    if (arr[y] <=64){
+      z=46;
+    }
+    else{
+      
+    z=arr[y];
+    }
+    Serial.print(z);
+  }
+}
+
+  
+*/
+/******************************MAIN*********************************/
+
+void loop(void) {
+    
+    
+    byte E_data[] = {0x51, 0x52, 0x53, 0x54, 0x56};
+    int Elen = sizeof(E_data);  
+    EEPROM_Write(E_data, 0, Elen);
+    
+    int j;
+    
+    for(j=0; j<sizeof(E_data); j++){
+      payload[j] = EEPROM_Read(j);
+    }
+    
+  
+    PAY_LEN=sizeof(payload);                    //find the length of the payload
+   
+    /*sets the length of the NDEF message, depending upon the payload size*/
+    byte NDEF_MSG[PAY_LEN + PRE_PAY_LEN-1];     
+    int NDEF_LEN = sizeof(NDEF_MSG);            //store its length in an int
+    
+    //Function call prepares the full NDEF message
+    NDEF_prep(NDEF_MSG, PAY_LEN);    
+     
+      
+      
+/******************************TENWONG*********************************/    
+      
+   
+    
+    
+   
+    while(!(nfc.Read_Register(STATUS_REG) & READY)); //wait until READY bit has been set
+///_MH    Serial.print("Fireware Version:"); Serial.println(nfc.Read_Register(VERSION_REG), HEX);    
+
+    //write NDEF memory with Capability Container + NDEF message
+    nfc.Write_Continuous(0, NDEF_MSG, (sizeof(NDEF_MSG)+1));
+
+    //Enable interrupts for End of Read and End of Write
+    nfc.Write_Register(INT_ENABLE_REG, EOW_INT_ENABLE + EOR_INT_ENABLE);
+
+    //Configure INTO pin for active low and enable RF
+    nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE + RF_ENABLE );
+
+    //enable interrupt 1
+    attachInterrupt(1, RF430_Interrupt, FALLING);
+    
+///_MH    Serial.println("Wait for read or write...");
+    while(1)
+    {
+        if(into_fired)
+        {
+            //clear control reg to disable RF
+            nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE); 
+            delay(750);
+            
+            //read the flag register to check if a read or write occurred
+            flags = nfc.Read_Register(INT_FLAG_REG); 
+///_MH            Serial.print("INT_FLAG_REG = 0x");Serial.println(flags, HEX);
+            
+            //ACK the flags to clear
+            nfc.Write_Register(INT_FLAG_REG, EOW_INT_FLAG + EOR_INT_FLAG); 
+            
+            if(flags & EOW_INT_FLAG)      //check if the tag was written
+            {
+///_MH                Serial.println("The tag was writted!");
+///_MH                digitalWrite(led, HIGH);
+            }
+            else if(flags & EOR_INT_FLAG) //check if the tag was read
+            {
+///_MH                Serial.println("The tag was readed!");
+///_MH                digitalWrite(led, LOW);
+            }
+            flags = 0;
+            into_fired = 0; //we have serviced INT1
+
+            //Enable interrupts for End of Read and End of Write
+            nfc.Write_Register(INT_ENABLE_REG, EOW_INT_ENABLE + EOR_INT_ENABLE);
+
+            //Configure INTO pin for active low and re-enable RF
+            nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE + RF_ENABLE);
+
+            //re-enable INTO
+            attachInterrupt(1, RF430_Interrupt, FALLING);
+        }
+    }
+}
+
+/**
+**  @brief  interrupt service
+**/
+void RF430_Interrupt(){
+    into_fired = 1;
+    detachInterrupt(1);//cancel interrupt
+}
+
+
+
