@@ -155,21 +155,21 @@ const static int LEN_BYTE_PACK = 0x1B;   //full NDEF (after setup)
 const static int LEN_BYTE_PAY = 0x1E;    //payload length
 
 /***************************************************************/
-#define EEPROM_address_W1 0xA0      //changed from 0x50 //write to block 1
-#define EEPROM_address_R1 0xA1      //read from bloack 1 
-byte Device_ID_MSB = 0;     //Allows for 65536 devices… 
-byte Device_ID_LSB = 1;     //… as a gallery may have over 128
+
+//removed EEPROM addresses _MH should know what needs to go in here
+
+byte Device_ID_LSB = 1;     //Allows for 255 devices (Default :1)
 byte Year = 14;             //1 byte allows for 128 years. 0 = year 2000
-byte Day_MSB = 1;           //xxxxxxBB  10 bits allow for 512 days > 365
-byte Day_LSB = 83;          //Day 183 is July 3
+byte Day_MSB = 0;           //xxxxxxBB  10 bits allow for 512 days > 365
+byte Day_LSB = 183;          //Day 183 is July 3 (testing)
 byte Time_Hr = 23;          //Hour of Day (24hr clock)     
 byte Time_Min =59;          //Time in minutes 
 byte Interval = 5;          //Measurement Interval (1 to 128 mins)
 byte Total_1  = 0;          //(Memory pointer) (byte 1)
-byte Total_2  = 0;
+byte Total_2  = 0;			//_MH says these values are stored in EEPROM
 byte Total_3  = 1;
 
-//made a change for github
+
 
 #endif /* RLMSG2_H */
 
