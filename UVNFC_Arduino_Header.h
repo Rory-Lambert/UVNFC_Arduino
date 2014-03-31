@@ -169,6 +169,15 @@ byte Total_1  = 0;          //(Memory pointer) (byte 1)
 byte Total_2  = 0;			//_MH says these values are stored in EEPROM
 byte Total_3  = 1;
 
+/************************************EEPROM DEFINES*************************/
+#define uvPin A0           // The physical addresses of the pins connected to UV sensor... 
+#define ambPin A1          //...and ambient light sensor
+
+int ee_address = 0x02;     //initial eeprom address
+
+//address format: 1 0 1 0 A2 A1 B0 R/W. (R/W = 1 for read, 0 for write)
+int eeprom_cntrl = 0x50;  //A2 = 0; A1 = 0; B0 = 0.
+/******TODO: WILL NEED TO IMPLEMENT THIS FOR TWO BLOCKS******/
 
 
 #endif /* RLMSG2_H */

@@ -1,3 +1,4 @@
+
 /*
  *Edited from an open-source project. 
  *Copyright 2013 Ten Wong, wangtengoo7@gmail.com  
@@ -16,7 +17,7 @@
 #endif
 #include <Wire.h>
 #include <RF430CL330H_Shield.h>
-#include "rlmsg2.h"
+#include "UVNFC_Arduino_Header.h"
 #define IRQ   (3)
 #define RESET (4)  
 int led = 13;  //_MH
@@ -36,6 +37,13 @@ byte payload[] = PAYLOAD;
 byte payload2[] = PAYLOAD2;
 byte header[11];
 
+//_MH's variables - Global
+int timer_f = 0;
+int uvRaw = 0;
+int ambRaw = 0;
+byte uvEE = 0;
+byte ambEE = 0;
+int storedcount = 0;
 
 unsigned static int PAY_LEN;
 
@@ -48,6 +56,8 @@ void setup(void)
     //Serial.begin(115200);  ///tbr
     //Serial.println("Serial connection initiated");    //tbr
     //Serial.println("NDEF message creation");  //tbr
+    Wire.begin();            //FROM _MH UVNFC_EEPROM
+    delay(150);
     pinMode(led, OUTPUT);   //tbr
     digitalWrite(led, HIGH);  //tbr
     //reset RF430    //tbr
@@ -55,6 +65,31 @@ void setup(void)
     
     //_MH change from delay(1000);
     delay(10000);
+    
+     /***TIMER INTERRUPTS***/
+  //stop interrupts 
+  cli();
+  //set timer1 interrupt at 0.25Hz
+  TCCR1A = 0;    //set entire TCCR1A register to 0
+  TCCR1B = 0;    //same for TCCR1B
+  TCNT1  = 0;    //initialize counter value to 0
+  //set compare match register for 0.25hz increments
+  OCR1A = 62499; // = (16*10^6) / (0.25*1024) - 1 (must be <65536)
+  //turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  //Set CS10 and CS12 bits for 1024 prescaler
+  TCCR1B |= (1 << CS12) | (1 << CS10);  
+  //enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+  //allow interrupts
+  sei();
+  
+  //Pin setup
+  pinMode(uvPin, INPUT);
+  pinMode(ambPin, INPUT);
+  
+
+    
 }
 
 
@@ -95,18 +130,19 @@ void showASCII (byte arr[], int length){
 
 void loop(void) {
     
+    if (timer_f==1){
+      timer_f=0;
     
-    byte E_data[] = {0x51, 0x52, 0x53, 0x54, 0x56};
-    int Elen = sizeof(E_data);  
-    EEPROM_Write(E_data, 0, Elen);
-    
-    int j;
-    
-    for(j=0; j<sizeof(E_data); j++){
-      payload[j] = EEPROM_Read(j);
-    }
-    
+      uvRaw = analogRead(uvPin);
+      StoreData(0x03, 0x44);
+      ambRaw = analogRead(ambPin);
+      StoreData(0x04, 0x45);
+      uvEE = EepromRead(0x03);
+      ambEE = EepromRead(0x04);
   
+    payload[0]=uvEE;
+    payload[1]=ambEE;
+    }
     PAY_LEN=sizeof(payload);                    //find the length of the payload
    
     /*sets the length of the NDEF message, depending upon the payload size*/
@@ -115,7 +151,8 @@ void loop(void) {
     
     //Function call prepares the full NDEF message
     NDEF_prep(NDEF_MSG, PAY_LEN);    
-     
+    
+  
       
       
 /******************************TENWONG*********************************/    

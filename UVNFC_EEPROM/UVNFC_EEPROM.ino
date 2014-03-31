@@ -1,17 +1,58 @@
-/************************************EEPROM FUNCTIONS**************************/
-/*                                                                            */
-/******************************************************************************/
+#include <Wire.h>
 
+#define uvPin A0
+#define ambPin A1
 
+int timer_f = 0;
+int uvRaw = 0;
+int ambRaw = 0;
+byte uvEE = 0;
+byte ambEE = 0;
+int storedcount = 0;
 
-//timer interrupt subroutine 
-ISR(TIMER1_COMPA_vect){
-  if(timer_f == 0){          //if the flag isnt set...
-     timer_f = 1;            //...set it.
-   }
+//initial eeprom address
+int ee_address = 0x02;
+
+//address format: 1 0 1 0 A2 A1 B0 R/W. (R/W = 1 for read, 0 for write)
+int eeprom_cntrl = 0x50;  //A2 = 0; A1 = 0; B0 = 0.
+/******TODO: WILL NEED TO IMPLEMENT THIS FOR TWO BLOCKS******/
+
+void setup(){
+  /***I2C SETUP***/
+  //join bus as Master
+  Wire.begin();
+  delay(150);
+  
+  /***TIMER INTERRUPTS***/
+  //stop interrupts 
+  cli();
+  //set timer1 interrupt at 0.25Hz
+  TCCR1A = 0;    //set entire TCCR1A register to 0
+  TCCR1B = 0;    //same for TCCR1B
+  TCNT1  = 0;    //initialize counter value to 0
+  //set compare match register for 0.25hz increments
+  OCR1A = 62499; // = (16*10^6) / (0.25*1024) - 1 (must be <65536)
+  //turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  //Set CS10 and CS12 bits for 1024 prescaler
+  TCCR1B |= (1 << CS12) | (1 << CS10);  
+  //enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+  //allow interrupts
+  sei();
+  
+  //Pin setup
+  pinMode(uvPin, INPUT);
+  pinMode(ambPin, INPUT);
+  
 }
 
-/*****************************WRITE************************************/
+//timer interrupt
+ISR(TIMER1_COMPA_vect){
+  if(timer_f == 0){
+     timer_f = 1;
+   }
+}
 
 //writes one byte of data to stated address in memory
 void EepromWrite(int address, byte data){
@@ -33,8 +74,6 @@ void EepromWrite(int address, byte data){
   delay(5);
   
 } 
-
-/*********************************READ***********************************/
 
 //reads one byte of data from stated address in memory
 byte EepromRead(int address){
@@ -63,9 +102,6 @@ byte EepromRead(int address){
   return receivedValue;
 }
 
-
-/*************************************STOREDATA**********************************/
-
 /**USE THIS FUNCTION TO WRITE DATA TO EEPROM**/
 void StoreData(int address, int data){
 
@@ -81,9 +117,6 @@ void StoreData(int address, int data){
   UpdateCounter();
 }
 
-
-/***************************UPDATE COUNTER**************************************/
-
 void UpdateCounter(){
   /* function for keeping track of number of 
   *  values in eeprom and writing that value into 
@@ -98,8 +131,6 @@ void UpdateCounter(){
   EepromWrite(0x01, count_lo);    //tx count_lo byte
 
 }
-
-/****************************READALLDATA******************************************/
 
 void ReadAllData(){
   /* function for reading all of eeprom */
@@ -130,3 +161,20 @@ void ReadAllData(){
   ee_address = 0x02;      //reset global eeprom address
   
 }
+  
+//main
+void loop(){
+  if (timer_f==1){
+    timer_f=0;
+    
+    uvRaw = analogRead(uvPin);
+    StoreData(0x03, uvRaw);
+    ambRaw = analogRead(ambPin);
+    StoreData(0x04, ambRaw);
+    
+    uvEE = EepromRead(0x03);
+    ambEE = EepromRead(0x04);
+  }
+}
+
+
