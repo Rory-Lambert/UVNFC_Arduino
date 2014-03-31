@@ -170,8 +170,8 @@ byte Total_2  = 0;			//_MH says these values are stored in EEPROM
 byte Total_3  = 1;
 
 /************************************EEPROM DEFINES*************************/
-#define uvPin A0           // The physical addresses of the pins connected to UV sensor... 
-#define ambPin A1          //...and ambient light sensor
+#define uvPin A0          // The physical addresses of the pins connected to UV sensor... A0
+#define ambPin A1          //...and ambient light sensor A1
 
 int ee_address = 0x02;     //initial eeprom address
 

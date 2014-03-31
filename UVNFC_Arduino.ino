@@ -58,8 +58,12 @@ void setup(void)
     //Serial.println("NDEF message creation");  //tbr
     Wire.begin();            //FROM _MH UVNFC_EEPROM
     delay(150);
-    pinMode(led, OUTPUT);   //tbr
-    digitalWrite(led, HIGH);  //tbr
+    //pinMode(led, OUTPUT);   //tbr
+    //digitalWrite(led, HIGH);  //tbr
+     //Pin setup
+    pinMode(A0, INPUT);
+    pinMode(A1, INPUT);
+  
     //reset RF430    //tbr
     nfc.begin();
     
@@ -84,10 +88,7 @@ void setup(void)
   //allow interrupts
   sei();
   
-  //Pin setup
-  pinMode(uvPin, INPUT);
-  pinMode(ambPin, INPUT);
-  
+ 
 
     
 }
@@ -133,10 +134,10 @@ void loop(void) {
     if (timer_f==1){
       timer_f=0;
     
-      uvRaw = analogRead(uvPin);
-      StoreData(0x03, 0x44);
-      ambRaw = analogRead(ambPin);
-      StoreData(0x04, 0x45);
+      uvRaw = analogRead(A0);
+      StoreData(0x03, uvRaw);
+      ambRaw = analogRead(A1);
+      StoreData(0x04, ambRaw);
       uvEE = EepromRead(0x03);
       ambEE = EepromRead(0x04);
   
