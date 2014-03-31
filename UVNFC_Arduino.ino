@@ -45,6 +45,8 @@ byte uvEE = 0;
 byte ambEE = 0;
 int storedcount = 0;
 
+static int count = 0; //***dev
+
 unsigned static int PAY_LEN;
 
 /*********************************SETUP******************************/
@@ -93,6 +95,12 @@ void setup(void)
     
 }
 
+//timer interrupt subroutine 
+ISR(TIMER1_COMPA_vect){
+  if(timer_f == 0){          //if the flag isnt set...
+     timer_f = 1;            //...set it.
+   }
+}
 
 /******************************SHOWARRAY******************************/
 /*
@@ -129,21 +137,26 @@ void showASCII (byte arr[], int length){
 */
 /******************************MAIN*********************************/
 
+
+
 void loop(void) {
     
     if (timer_f==1){
       timer_f=0;
-    
+      count++;
       uvRaw = analogRead(A0);
       StoreData(0x03, uvRaw);
       ambRaw = analogRead(A1);
       StoreData(0x04, ambRaw);
       uvEE = EepromRead(0x03);
       ambEE = EepromRead(0x04);
+      payload[0]=uvEE;
+      payload[1]=count;
   
-    payload[0]=uvEE;
-    payload[1]=ambEE;
+   
     }
+    
+   
     PAY_LEN=sizeof(payload);                    //find the length of the payload
    
     /*sets the length of the NDEF message, depending upon the payload size*/
