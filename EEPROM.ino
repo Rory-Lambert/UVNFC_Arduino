@@ -99,19 +99,18 @@ void UpdateCounter(){
 void ReadAllData(){
   /* function for reading all of eeprom */
   byte receivedValue = 0;
-  byte receivedBuffer[1024];
-  
+
   //get count bytes from eeprom and convert to integer
   byte count_hi = EepromRead(0x00);
   byte count_lo = EepromRead(0x01);
-  int count = count_lo | (count_hi << 8);
+  int count_ee = count_lo | (count_hi << 8);
   
   /*READ storedcount NUMBER OF VALUES FROM EEPROM
     AND STORE SEQUENTIALLY IN A BUFFER*/
   
   int address = 0x03;        //start at first address
   int y = 0;
-  for (y=0; y<count; y++){
+  for (y=0; y<count_ee; y++){
     
     receivedValue = EepromRead(address);    //read hi data value
     address++;                                 //increment eeprom address

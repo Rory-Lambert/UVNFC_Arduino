@@ -198,22 +198,29 @@ void loop(void) {
         
         else{
         
-          if (timer_f==1){
-            timer_f=0;
-            NFCount++;
-            uvRaw = analogRead(A0);
-            StoreData(0x03, uvRaw);
-            ambRaw = analogRead(A1);
-            StoreData(0x04, ambRaw);
-            uvEE = EepromRead(0x03);
-            ambEE = EepromRead(0x04);
+            if (timer_f==1){
+                timer_f=0;
+                NFCount++;
+                uvRaw = analogRead(A0);
+                StoreData(ee_address, count);
+                ambRaw = analogRead(A1);
+                StoreData(ee_address, NFCount);
+                //uvEE = EepromRead(0x03);
+                //ambEE = EepromRead(0x04);
+                
+                if (NFCount == 3){    
+                  payload[0]=200;
+                  //ReadAllData();
+                  //count = 0;
+                  //NFCount = 0;
+                }          
+            }
             
-            }          
-          
             
-            
-            payload[0] = count;
-            payload[1]=NFCount;
+            //payload[0] = receivedBuffer[1];    //should read 1
+            //payload[1] = receivedBuffer[3];    //should read 2
+            payload[0] = 0x01;
+            payload[1] = 0x03;
             PAY_LEN=sizeof(payload);                    //find the length of the payload
        
             /*sets the length of the NDEF message, depending upon the payload size*/
