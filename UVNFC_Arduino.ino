@@ -45,6 +45,8 @@ byte uvEE = 0;
 byte ambEE = 0;
 int storedcount = 0;
 
+int NFCount = 0; //***dev
+
 static int count = 0; //***dev
 
 unsigned static int PAY_LEN;
@@ -68,6 +70,7 @@ void setup(void)
   
     //reset RF430    //tbr
     nfc.begin();
+
     
     //_MH change from delay(1000);
     delay(10000);
@@ -80,7 +83,7 @@ void setup(void)
   TCCR1B = 0;    //same for TCCR1B
   TCNT1  = 0;    //initialize counter value to 0
   //set compare match register for 0.25hz increments
-  OCR1A = 62499; // = (16*10^6) / (0.25*1024) - 1 (must be <65536)
+  OCR1A = 46874; // = (8*10^6) / (1024*(1/6s) - 1 (must be <65536)
   //turn on CTC mode
   TCCR1B |= (1 << WGM12);
   //Set CS10 and CS12 bits for 1024 prescaler
@@ -90,18 +93,24 @@ void setup(void)
   //allow interrupts
   sei();
   
- 
+  //FOR TEST _MH
+  pinMode(2, OUTPUT); 
 
     
 }
 
 //timer interrupt subroutine 
 ISR(TIMER1_COMPA_vect){
-  if(timer_f == 0){          //if the flag isnt set...
-     timer_f = 1;            //...set it.
-   }
+     count++;
+            
+     if (count == (Interval*10)){
+         count = 0;
+         
+         if(timer_f == 0){          //if the flag isnt set...
+             timer_f = 1;            //...set it.
+         }
+     }
 }
-
 /******************************SHOWARRAY******************************/
 /*
 void showarray (byte arr[], int length){
@@ -141,60 +150,16 @@ void showASCII (byte arr[], int length){
 
 void loop(void) {
     
-    if (timer_f==1){
-      timer_f=0;
-      count++;
-      uvRaw = analogRead(A0);
-      StoreData(0x03, 0x55);
-      ambRaw = analogRead(A1);
-      StoreData(0x04, 0x33);
-      uvEE = EepromRead(0x03);
-      ambEE = EepromRead(0x04);
-      payload[0]=uvEE;
-      payload[1]=ambEE;
-  
-   
-    }
-    
-   
-    PAY_LEN=sizeof(payload);                    //find the length of the payload
-   
-    /*sets the length of the NDEF message, depending upon the payload size*/
-    byte NDEF_MSG[PAY_LEN + PRE_PAY_LEN-1];     
-    int NDEF_LEN = sizeof(NDEF_MSG);            //store its length in an int
-    
-    //Function call prepares the full NDEF message
-    NDEF_prep(NDEF_MSG, PAY_LEN);    
-    
-  
-      
-      
-/******************************TENWONG*********************************/    
-      
-   
-    
-    
-   
-    while(!(nfc.Read_Register(STATUS_REG) & READY)); //wait until READY bit has been set
-///_MH    Serial.print("Fireware Version:"); Serial.println(nfc.Read_Register(VERSION_REG), HEX);    
 
-    //write NDEF memory with Capability Container + NDEF message
-    nfc.Write_Continuous(0, NDEF_MSG, (sizeof(NDEF_MSG)+1));
-
-    //Enable interrupts for End of Read and End of Write
-    nfc.Write_Register(INT_ENABLE_REG, EOW_INT_ENABLE + EOR_INT_ENABLE);
-
-    //Configure INTO pin for active low and enable RF
-    nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE + RF_ENABLE );
-
-    //enable interrupt 1
-    attachInterrupt(1, RF430_Interrupt, FALLING);
+    
     
 ///_MH    Serial.println("Wait for read or write...");
     while(1)
     {
         if(into_fired)
         {
+          
+            
             //clear control reg to disable RF
             nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE); 
             delay(750);
@@ -227,6 +192,62 @@ void loop(void) {
 
             //re-enable INTO
             attachInterrupt(1, RF430_Interrupt, FALLING);
+        }
+        
+        /****************************************OUR STUFF HERE***********************/
+        
+        else{
+        
+          if (timer_f==1){
+            timer_f=0;
+            NFCount++;
+            uvRaw = analogRead(A0);
+            StoreData(0x03, uvRaw);
+            ambRaw = analogRead(A1);
+            StoreData(0x04, ambRaw);
+            uvEE = EepromRead(0x03);
+            ambEE = EepromRead(0x04);
+            
+            }          
+          
+            
+            
+            payload[0] = count;
+            payload[1]=NFCount;
+            PAY_LEN=sizeof(payload);                    //find the length of the payload
+       
+            /*sets the length of the NDEF message, depending upon the payload size*/
+            byte NDEF_MSG[PAY_LEN + PRE_PAY_LEN-1];     
+            int NDEF_LEN = sizeof(NDEF_MSG);            //store its length in an int
+            
+            //Function call prepares the full NDEF message
+            NDEF_prep(NDEF_MSG, PAY_LEN);    
+
+    
+      
+      
+/******************************TENWONG*********************************/    
+      
+   
+    
+    
+   
+    while(!(nfc.Read_Register(STATUS_REG) & READY)); //wait until READY bit has been set
+///_MH    Serial.print("Fireware Version:"); Serial.println(nfc.Read_Register(VERSION_REG), HEX);    
+
+    //write NDEF memory with Capability Container + NDEF message
+    nfc.Write_Continuous(0, NDEF_MSG, (sizeof(NDEF_MSG)+1));
+
+    //Enable interrupts for End of Read and End of Write
+    nfc.Write_Register(INT_ENABLE_REG, EOW_INT_ENABLE + EOR_INT_ENABLE);
+
+    //Configure INTO pin for active low and enable RF
+    nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE + RF_ENABLE );
+
+    //enable interrupt 1
+    attachInterrupt(1, RF430_Interrupt, FALLING);
+        ////
+        
         }
     }
 }

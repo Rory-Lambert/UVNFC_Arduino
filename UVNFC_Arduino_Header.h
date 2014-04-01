@@ -159,12 +159,12 @@ const static int LEN_BYTE_PAY = 0x1E;    //payload length
 //removed EEPROM addresses _MH should know what needs to go in here
 
 byte Device_ID_LSB = 1;     //Allows for 255 devices (Default :1)
-byte Year = 14;             //1 byte allows for 128 years. 0 = year 2000
+byte Year = 14;             //1 byte allows for 255 years. 0 = year 2000
 byte Day_MSB = 0;           //xxxxxxBB  10 bits allow for 512 days > 365
 byte Day_LSB = 183;          //Day 183 is July 3 (testing)
 byte Time_Hr = 23;          //Hour of Day (24hr clock)     
 byte Time_Min =59;          //Time in minutes 
-byte Interval = 5;          //Measurement Interval (1 to 128 mins)
+byte Interval = 1;          //Measurement Interval (1 to 255 mins)
 byte Total_1  = 0;          //(Memory pointer) (byte 1)
 byte Total_2  = 0;			//_MH says these values are stored in EEPROM
 byte Total_3  = 1;

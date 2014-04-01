@@ -65,7 +65,7 @@ byte EepromRead(int address){
 void StoreData(int address, int data){
 
   //scale value from adc from 10 bits to 8 bits
-  unsigned long int scaledData = (data);    //***removed scaling factor
+  unsigned long int scaledData = (data/4);    //***removed scaling factor
   byte newdata = (byte)scaledData;
   
   EepromWrite(address, newdata);    //Tx data_hi byte
