@@ -145,13 +145,13 @@ void loop(void) {
       timer_f=0;
       count++;
       uvRaw = analogRead(A0);
-      StoreData(0x03, uvRaw);
+      StoreData(0x03, 0x55);
       ambRaw = analogRead(A1);
-      StoreData(0x04, ambRaw);
+      StoreData(0x04, 0x33);
       uvEE = EepromRead(0x03);
       ambEE = EepromRead(0x04);
       payload[0]=uvEE;
-      payload[1]=count;
+      payload[1]=ambEE;
   
    
     }
