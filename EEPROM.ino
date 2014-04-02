@@ -117,8 +117,8 @@ void ReadAllData(){
     receivedValue = EepromRead(address);    //read hi data value
     address++;                                 //increment eeprom address
     
-    //convert to int and store in buffer
-  //  receivedBuffer[y] = receivedValue;
+    //store received eeprom value in payload
+    payload[y] = receivedValue;
     
   }
   

@@ -33,7 +33,7 @@ uint16_t flags = 0;
 byte msg_setup[] = MSG_SETUP;  //31b
 byte mime_type[] = MIME_TYPE;  //27b
 byte aar[] = AAR; //33b
-byte payload[] = PAYLOAD;
+byte payload[100]; //= PAYLOAD;
 byte payload2[] = PAYLOAD2;
 byte header[11];
 
@@ -109,13 +109,16 @@ ISR(TIMER1_COMPA_vect){
      }
 }
 
+
 /******************************MAIN*********************************/
 
-
-
 void loop(void) {
+     
+ 
+/****************************************OUR STUFF HERE***********************/
     
-    if(NFC_interrupt){
+    
+     if(NFC_interrupt){
             
         //clear control reg to disable RF
         nfc.Write_Register(CONTROL_REG, INT_ENABLE + INTO_DRIVE); 
@@ -149,43 +152,40 @@ void loop(void) {
       
         //re-enable INTO
         attachInterrupt(1, RF430_Interrupt, FALLING);
-    }
+    }    
+ 
+    if (timer_int_flag==1){
         
-        /****************************************OUR STUFF HERE***********************/
+        timer_int_flag=0;
+        //NFCount++;
+        /*uvRaw = analogRead(A0);
+        StoreData(ee_address, NFCount);
+        ambRaw = analogRead(A1);
+        StoreData(ee_address, ambRaw);
+        uvEE = EepromRead(0x03);
+        ambEE = EepromRead(0x04);
+        */ 
+          
+        //ReadAllData();
+                         
+        }
         
-        else{
+    NFCount++;
+    payload[0]=(NFCount+30);
+    payload[1]=0x66;
+     
+    //payload[0] = receivedBuffer[1];    //should read 1
+    //payload[1] = receivedBuffer[3];    //should read 2
+    //payload[0] = 0x55;
+    //payload[1] = 0x56;
+    PAY_LEN=sizeof(payload);                    //find the length of the payload
+   
+    /*sets the length of the NDEF message, depending upon the payload size*/
+    byte NDEF_MSG[PAY_LEN + PRE_PAY_LEN-1];     
+    int NDEF_LEN = sizeof(NDEF_MSG);            //store its length in an int
         
-            if (timer_int_flag==1){
-                timer_int_flag=0;
-                NFCount++;
-                uvRaw = analogRead(A0);
-                StoreData(ee_address, count_interrupts);
-                ambRaw = analogRead(A1);
-                StoreData(ee_address, NFCount);
-                //uvEE = EepromRead(0x03);
-                //ambEE = EepromRead(0x04);
-                
-                if (NFCount == 3){    
-                  payload[0]=200;
-                  ReadAllData();
-                  //count_interrupts = 0;
-                  //NFCount = 0;
-                }          
-            }
-            
-            
-            //payload[0] = receivedBuffer[1];    //should read 1
-            //payload[1] = receivedBuffer[3];    //should read 2
-            payload[0] = 0x01;
-            payload[1] = 0x03;
-            PAY_LEN=sizeof(payload);                    //find the length of the payload
-       
-            /*sets the length of the NDEF message, depending upon the payload size*/
-            byte NDEF_MSG[PAY_LEN + PRE_PAY_LEN-1];     
-            int NDEF_LEN = sizeof(NDEF_MSG);            //store its length in an int
-            
-            //Function call prepares the full NDEF message
-            NDEF_prep(NDEF_MSG, PAY_LEN);    
+    //Function call prepares the full NDEF message
+    NDEF_prep(NDEF_MSG, PAY_LEN);    
 
     
       
@@ -212,7 +212,11 @@ void loop(void) {
     attachInterrupt(1, RF430_Interrupt, FALLING);
       
         
-    }
+/********************Interrupt Handler*******************************/ 
+ 
+   
+        
+      
    
 }
 
