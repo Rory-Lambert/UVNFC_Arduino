@@ -179,7 +179,7 @@ int ee_address = 0x02;     //initial eeprom address
 int eeprom_cntrl = 0x50;  //A2 = 0; A1 = 0; B0 = 0.
 /******TODO: WILL NEED TO IMPLEMENT THIS FOR TWO BLOCKS******/
 
-byte receivedBuffer[1024];
+byte receivedBuffer[1023];
 
 #endif /* RLMSG2_H */
 

@@ -98,6 +98,7 @@ void UpdateCounter(){
 
 void ReadAllData(){
   /* function for reading all of eeprom */
+  
   byte receivedValue = 0;
 
   //get count bytes from eeprom and convert to integer
@@ -110,16 +111,17 @@ void ReadAllData(){
   
   int address = 0x03;        //start at first address
   int y = 0;
+  
   for (y=0; y<count_ee; y++){
     
     receivedValue = EepromRead(address);    //read hi data value
     address++;                                 //increment eeprom address
     
     //convert to int and store in buffer
-    receivedBuffer[y] = receivedValue;
+  //  receivedBuffer[y] = receivedValue;
     
   }
-
+  
   storedcount = 0;        //reset global storedcount
   ee_address = 0x02;      //reset global eeprom address
   
