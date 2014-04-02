@@ -38,7 +38,7 @@ byte payload2[] = PAYLOAD2;
 byte header[11];
 
 //_MH's variables - Global
-int timer_f = 0;
+int timer_int_flag= 0;
 int uvRaw = 0;
 int ambRaw = 0;
 byte uvEE = 0;
@@ -47,7 +47,7 @@ int storedcount = 0;
 
 int NFCount = 0; //***dev
 
-static int count = 0; //***dev
+static int count_interrupts = 0; //***dev
 
 unsigned static int PAY_LEN;
 
@@ -55,7 +55,7 @@ unsigned static int PAY_LEN;
 void setup(void) 
 {
     
-    delay(10000);     //_MH addition
+    delay(1000);     //_MH addition
   
     //Serial.begin(115200);  ///tbr
     //Serial.println("Serial connection initiated");    //tbr
@@ -72,8 +72,8 @@ void setup(void)
     nfc.begin();
 
     
-    //_MH change from delay(1000);
-    delay(10000);
+    //_MH 
+    delay(1000);
     
      /***TIMER INTERRUPTS***/
   //stop interrupts 
@@ -101,13 +101,13 @@ void setup(void)
 
 //timer interrupt subroutine 
 ISR(TIMER1_COMPA_vect){
-     count++;
+     count_interrupts;
             
-     if (count == (Interval*10)){
-         count = 0;
+     if (count_interrupts == (Interval*10)){
+         count_interrupts = 0;
          
-         if(timer_f == 0){          //if the flag isnt set...
-             timer_f = 1;            //...set it.
+         if(timer_int_flag == 0){          //if the flag isnt set...
+             timer_int_flag = 1;            //...set it.
          }
      }
 }
@@ -198,11 +198,11 @@ void loop(void) {
         
         else{
         
-            if (timer_f==1){
-                timer_f=0;
+            if (timer_int_flag==1){
+                timer_int_flag=0;
                 NFCount++;
                 uvRaw = analogRead(A0);
-                StoreData(ee_address, count);
+                StoreData(ee_address, count_interrupts);
                 ambRaw = analogRead(A1);
                 StoreData(ee_address, NFCount);
                 //uvEE = EepromRead(0x03);
@@ -211,7 +211,7 @@ void loop(void) {
                 if (NFCount == 3){    
                   payload[0]=200;
                   //ReadAllData();
-                  //count = 0;
+                  //count_interrupts = 0;
                   //NFCount = 0;
                 }          
             }
